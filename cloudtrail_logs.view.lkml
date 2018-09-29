@@ -124,6 +124,7 @@ view: cloudtrail_logs {
     sql: CASE
          WHEN substr(${sourceipaddress},1,2) = '54' THEN 'China'
          WHEN substr(${sourceipaddress},1,2) = '50' THEN 'Japan'
+<<<<<<< HEAD
          WHEN substr(${sourceipaddress},1,2) = '34' THEN 'London'
          ELSE 'United States of America'
          END
@@ -291,4 +292,174 @@ view: cloudtrail_logs {
     sql: 1.00*${cloudtrail_logs.total_errors}/NULLIF(${cloudtrail_logs.count},0);;
     type: number
     value_format_name:percent_2}
+=======
+         --WHEN substr(${sourceipaddress},1,2) = '34' THEN 'London'
+         WHEN substr(${sourceipaddress},1,2) = '34' THEN 'United Kingdom'
+         ELSE 'United States of America'
+         END
+        ;;
+  }
+
+
+
+
+### Parsing of the nested fields (shown as JSON in useridentity column)
+
+  dimension: user_identity {
+    type: string
+    group_label: "User Information"
+    sql: ${TABLE}.useridentity ;;
+  }
+
+  dimension: user_agent {
+    type: string
+    group_label: "User Information"
+    sql: ${TABLE}.useragent ;;
+  }
+
+  dimension: user_name {
+    type: string
+    group_label: "User Information"
+    sql: ${TABLE}.useridentity.username ;;
+  }
+
+  dimension: user_type {
+    type: string
+    group_label: "User Information"
+    sql: ${TABLE}.useridentity.type ;;
+  }
+
+  dimension: user_invoked_by {
+    type: string
+    group_label: "User Information"
+    sql: ${TABLE}.useridentity.invokedby ;;
+  }
+
+  dimension: assumed_user_name {
+    description: "Temporary security credentials obtained by assuming an IAM role"
+    label: "Assumed User Name"
+    type: string
+    group_label: "User Information"
+    sql: ${TABLE}.useridentity.sessioncontext.sessionissuer.userName ;;
+  }
+
+### End user fields
+
+  dimension: vpcendpointid {
+    type: string
+    sql: ${TABLE}.vpcendpointid ;;
+  }
+
+  dimension: login_status {
+    description: "Should only be used to evaluate logins"
+    type: string
+    sql: CASE
+         WHEN ${event_name} = 'ConsoleLogin' AND ${errormessage} IS NULL THEN 'Success'
+         WHEN ${event_name} = 'ConsoleLogin' AND ${errormessage} IS NOT NULL THEN 'Failure'
+         ELSE NULL
+         END
+    ;;
+  }
+
+dimension: errors_dim {
+  hidden: yes
+  type: string
+  sql: CASE
+         WHEN ${errormessage} IS NOT NULL THEN 'Error'
+         WHEN ${errormessage} IS NULL THEN 'No Error'
+         ELSE NULL
+         END
+        ;;
+}
+
+
+measure: total_events {
+  type: count
+  drill_fields: [assumed_user_name, event_name, event_source, count]
+}
+
+measure: count {
+  label: "Total Events"
+  type: count
+  drill_fields: [assumed_user_name, event_name, event_source, count]
+}
+
+measure: total_errors {
+  type: count
+  filters: {
+    field: errors_dim     ### filter on errormessage because there is always an error message during a failed login attempt
+    value: "Error"
+  }
+  drill_fields: [assumed_user_name, event_name, errorcode, errormessage, event_source, total_errors]
+}
+
+measure: total_logins {
+  type: count
+  drill_fields: [assumed_user_name, event_name, event_source, count]
+
+  filters: {
+    field: event_name
+    value: "ConsoleLogin"
+  }
+}
+
+measure: total_failed_logins {
+  type: count
+  drill_fields: [event_name, assumed_user_name, event_source, total_failed_logins]
+
+  filters: {
+    field: event_name
+    value: "ConsoleLogin"
+  }
+  filters: {
+    field: errors_dim     ### filter on errormessage because there is always an error message during a failed login attempt
+    value: "Error"
+  }
+}
+
+measure: total_successful_logins {
+  type: count
+  drill_fields: [event_name,total_successful_logins]
+
+  filters: {
+    field: event_name
+    value: "ConsoleLogin"
+  }
+  filters: {
+    field: errors_dim    ### filter on errormessage because there is always an error message during a failed login attempt
+    value: "No Error"
+  }
+}
+
+
+measure: count_access_denied_events {
+  type: count
+  drill_fields: [event_name, assumed_user_name, -user_name, user_invoked_by, count_access_denied_events]
+
+  filters: {
+    field: errorcode
+    value: "AccessDenied"
+  }
+}
+
+measure: count_of_distinct_call_users {
+  type: count_distinct
+  sql: ${user_name} ;;
+  drill_fields: [user_name, user_type]
+  value_format_name: decimal_0
+}
+
+measure: count_of_distinct_users {
+  type: count_distinct
+  drill_fields: [assumed_user_name, user_type]
+  sql: ${assumed_user_name} ;;
+  value_format_name: decimal_0
+}
+
+measure: errors_percent_events {
+  label: "Errors As A Percent Of Events"
+  sql: 1.00*${cloudtrail_logs.total_errors}/NULLIF(${cloudtrail_logs.count},0);;
+  type: number
+  value_format_name:percent_2}
+>>>>>>> branch 'master' of git@github.com:Niteshd7/aws_cloudtrail_block.git
 }

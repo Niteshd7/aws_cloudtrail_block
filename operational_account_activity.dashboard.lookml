@@ -117,6 +117,7 @@
     title_text: Top IAM Users
     body_text: |-
       Use: This data table shows the top IAM users and activities by event name.
+<<<<<<< HEAD
       Interpretation: The results will show the total activities initiated by each IAM user and the event name for those activities. Drill into this query to filter the activity and view only events that occurred outside of the known network or after hours.
     row: 12
     col: 18
@@ -127,6 +128,20 @@
     title_text: Root Activity
     body_text: |-
       Use: Another useful query is to understand how the root account and credentials are being used and which activities are being performed by root. The following query will look at the top events initiated by root from the beginning of the year.
+=======
+
+      Interpretation: The results will show the total activities initiated by each IAM user and the event name for those activities. Drill into this query to filter the activity and view only events that occurred outside of the known network or after hours.
+    row: 12
+    col: 18
+    width: 6
+    height: 8
+  - name: Root Activity (Operations)
+    type: text
+    title_text: Root Activity
+    body_text: |-
+      Use: Another useful query is to understand how the root account and credentials are being used and which activities are being performed by root. The following query will look at the top events initiated by root from the beginning of the year.
+
+>>>>>>> branch 'master' of git@github.com:Niteshd7/aws_cloudtrail_block.git
       Interpretation: It will show whether these were direct root activities or whether they were invoked by an AWS service (and, if so, which one) to perform an activity.
     row: 20
     col: 0
